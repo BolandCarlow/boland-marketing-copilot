@@ -184,3 +184,4 @@ export async function runDueScheduledIntegrations(limit = 25) {
 export function getNextScheduledRun(frequency: Setting["sync_frequency"]) {
   return nextRun(frequency);
 }
+

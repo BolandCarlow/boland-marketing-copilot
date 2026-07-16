@@ -144,3 +144,4 @@ export function normalizeRecords(provider: ProviderId, records: unknown[]): Norm
     return normalizeLead(record);
   });
 }
+

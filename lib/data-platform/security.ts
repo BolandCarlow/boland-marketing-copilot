@@ -36,3 +36,4 @@ export function hasValidSyncSecret(request: Request) {
   const suppliedBuffer = Buffer.from(supplied);
   return expectedBuffer.length === suppliedBuffer.length && timingSafeEqual(expectedBuffer, suppliedBuffer);
 }
+

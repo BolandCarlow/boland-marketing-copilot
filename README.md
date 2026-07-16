@@ -110,3 +110,4 @@ Lead statuses are `new`, `contacted`, `qualified`, `appointment`, `won` and `los
 ## Enabling live connectors later
 
 Live connector workers can be added without changing the database or dashboard contracts. Implement the `IntegrationAdapter` contract in `lib/integrations/adapter-registry.ts`, register the provider adapter on the server, retrieve and decrypt credentials inside that adapter, translate upstream records into the documented batch format, and enqueue them. Decryption and provider SDK calls must remain in server-only code.
+

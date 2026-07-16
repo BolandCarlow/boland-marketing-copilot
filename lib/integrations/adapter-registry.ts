@@ -66,3 +66,4 @@ export function registerIntegrationAdapter(adapter: IntegrationAdapter) {
 export function getIntegrationAdapter(provider: ProviderId) {
   return adapters.get(provider) ?? new PlaceholderAdapter(provider);
 }
+

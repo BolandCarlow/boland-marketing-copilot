@@ -93,3 +93,4 @@ comment on table public.integration_sync_history is
   'Immutable user-visible audit trail for manual, scheduled, webhook and connection-test integration runs.';
 comment on table public.integration_error_logs is
   'Structured provider errors with safe context only; credentials and raw secrets must never be logged.';
+

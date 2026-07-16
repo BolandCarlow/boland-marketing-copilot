@@ -128,3 +128,4 @@ where not exists (
   select 1 from public.marketing_insights
   where title = seed.title and insight_date = current_date
 );
+

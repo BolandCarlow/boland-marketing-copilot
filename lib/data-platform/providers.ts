@@ -153,3 +153,4 @@ export function isAuthenticationType(value: string): value is AuthenticationType
 export function getProvider(value: string) {
   return providers.find((provider) => provider.id === value);
 }
+

@@ -84,3 +84,4 @@ export function IntegrationCard({ provider, current }: { provider: ProviderDefin
     {state.message ? <p className={`mt-4 rounded-lg px-3 py-2 text-sm ${state.status === "error" ? "bg-rose-400/10 text-rose-200" : "bg-emerald-400/10 text-emerald-200"}`} role="status">{state.message}</p> : null}
   </article>;
 }
+

@@ -428,3 +428,4 @@ where not exists (select 1 from public.marketing_insights where title = seed.tit
 
 select public.refresh_daily_kpi_summary(day::date)
 from generate_series(current_date - 29, current_date, interval '1 day') day;
+
