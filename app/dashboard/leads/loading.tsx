@@ -1,0 +1,1 @@
+export default function Loading() { return <div className="leads-loading" aria-label="Loading Leads Hub"><div className="skeleton leads-loading-title"/><div className="leads-kpis">{Array.from({ length: 4 }, (_, index) => <div className="card skeleton leads-loading-card" key={index}/>)}</div><div className="card skeleton leads-loading-table"/></div>; }
