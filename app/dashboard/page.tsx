@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 
 type Kpi = { summary_date: string; total_leads: number };
 type Spend = { platform: string; amount: number };
+type MetaMetric = { spend: number; impressions: number; link_clicks: number; leads: number };
 type Lead = { id: string; occurred_at: string; customer_name: string; status: string; salesperson: string | null; marketing_sources: unknown; lead_sources: unknown; brands: unknown; vehicle_models: unknown };
 
 const currency = (value: number) => new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
@@ -25,17 +26,19 @@ function TrendChart({ rows, days }: { rows: Kpi[]; days: 7 | 30 }) {
 
 export default async function DashboardPage() {
   const supabase = await createClient(); const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29); thirtyDaysAgo.setHours(0, 0, 0, 0); const dateFloor = thirtyDaysAgo.toISOString().slice(0, 10);
-  const [totalResult, leadsResult, kpisResult, spendResult, insightsResult] = await Promise.all([
+  const [totalResult, leadsResult, kpisResult, spendResult, metaResult, insightsResult] = await Promise.all([
     supabase.from("leads").select("id", { count: "exact", head: true }),
     supabase.from("leads").select("id,occurred_at,customer_name,status,salesperson,marketing_sources(name),lead_sources(name),brands(name),vehicle_models(name)").gte("occurred_at", thirtyDaysAgo.toISOString()).order("occurred_at", { ascending: false }).limit(500),
     supabase.from("daily_kpi_summary").select("summary_date,total_leads").eq("scope", "all").gte("summary_date", dateFloor).order("summary_date", { ascending: true }).limit(30),
     supabase.from("marketing_spend").select("platform,amount").gte("spend_date", dateFloor).limit(500),
+    supabase.from("meta_ads_metrics").select("spend,impressions,link_clicks,leads").gte("metric_date", dateFloor).limit(1000),
     supabase.from("marketing_insights").select("id,type,title,summary,recommendation").order("created_at", { ascending: false }).limit(3)
   ]);
-  const hasError = [totalResult, leadsResult, kpisResult, spendResult, insightsResult].some((result) => result.error);
-  const leads = (leadsResult.data ?? []) as Lead[]; const kpis = (kpisResult.data ?? []) as Kpi[]; const spend = (spendResult.data ?? []) as Spend[];
+  const hasError = [totalResult, leadsResult, kpisResult, spendResult, metaResult, insightsResult].some((result) => result.error);
+  const leads = (leadsResult.data ?? []) as Lead[]; const kpis = (kpisResult.data ?? []) as Kpi[]; const spend = (spendResult.data ?? []) as Spend[]; const meta = (metaResult.data ?? []) as MetaMetric[];
   const spendTotal = spend.reduce((sum, row) => sum + Number(row.amount), 0); const thirtyDayLeads = kpis.reduce((sum, row) => sum + Number(row.total_leads), 0); const sevenDayLeads = kpis.slice(-7).reduce((sum, row) => sum + Number(row.total_leads), 0);
-  const cards = [["Total leads", Number(totalResult.count ?? 0).toLocaleString("en-IE"), "All sources, all time"], ["Leads this month", thirtyDayLeads.toLocaleString("en-IE"), `${sevenDayLeads} in the last 7 days`], ["Marketing spend", currency(spendTotal), "Google Ads and Meta Ads"], ["Cost per lead", currency(thirtyDayLeads ? spendTotal / thirtyDayLeads : 0), "30-day blended CPL"]];
+  const metaSpend = meta.reduce((sum, row) => sum + Number(row.spend), 0); const metaImpressions = meta.reduce((sum, row) => sum + Number(row.impressions), 0); const metaLinkClicks = meta.reduce((sum, row) => sum + Number(row.link_clicks), 0); const metaLeads = meta.reduce((sum, row) => sum + Number(row.leads), 0);
+  const cards = [["Total leads", Number(totalResult.count ?? 0).toLocaleString("en-IE"), "All sources, all time"], ["Meta Ads spend", currency(metaSpend), "Last 30 days from Meta"], ["Meta impressions", metaImpressions.toLocaleString("en-IE"), "Last 30 days from Meta"], ["Meta leads", metaLeads.toLocaleString("en-IE"), `${metaLinkClicks.toLocaleString("en-IE")} link clicks in the last 30 days`]];
   return <>
     <header className="page-header"><div><p className="eyebrow">Overview</p><h1 className="page-title">Marketing performance, at a glance.</h1><p className="page-intro">A focused view of dealership demand, marketing investment and the actions that need attention.</p></div><Link className="button" href="/dashboard/settings/integrations">Manage sources</Link></header>
     {hasError ? <div className="notice" role="status">Some reporting data could not be refreshed. Figures below may be incomplete.</div> : null}

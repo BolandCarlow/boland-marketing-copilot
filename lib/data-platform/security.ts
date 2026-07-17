@@ -37,3 +37,12 @@ export function hasValidSyncSecret(request: Request) {
   return expectedBuffer.length === suppliedBuffer.length && timingSafeEqual(expectedBuffer, suppliedBuffer);
 }
 
+export function hasValidScheduledSyncSecret(request: Request) {
+  if (hasValidSyncSecret(request)) return true;
+  const expected = process.env.CRON_SECRET;
+  const supplied = request.headers.get("authorization");
+  if (!expected || !supplied) return false;
+  const expectedBuffer = Buffer.from(`Bearer ${expected}`);
+  const suppliedBuffer = Buffer.from(supplied);
+  return expectedBuffer.length === suppliedBuffer.length && timingSafeEqual(expectedBuffer, suppliedBuffer);
+}

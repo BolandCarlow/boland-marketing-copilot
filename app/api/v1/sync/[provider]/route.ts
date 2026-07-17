@@ -14,7 +14,7 @@ export async function GET(_request: Request, context: Context) {
     name: definition.name,
     accepts: definition.acceptedRecord,
     mode: "queue-only",
-    liveApiConnected: false
+    liveApiConnected: definition.id === "meta-ads"
   });
 }
 
@@ -40,4 +40,3 @@ export async function POST(request: Request, context: Context) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
-

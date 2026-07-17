@@ -29,6 +29,10 @@ export type AdMetric = {
   conversionValue?: number;
   reach?: number;
   leads?: number;
+  linkClicks?: number;
+  ctr?: number;
+  cpc?: number;
+  cpm?: number;
   rawPayload: InputRecord;
 };
 
@@ -107,6 +111,10 @@ function normalizeAdMetric(record: InputRecord, kind: AdMetric["kind"]): AdMetri
     conversionValue: number(record, "conversionValue"),
     reach: number(record, "reach"),
     leads: number(record, "leads"),
+    linkClicks: number(record, "linkClicks"),
+    ctr: number(record, "ctr"),
+    cpc: number(record, "cpc"),
+    cpm: number(record, "cpm"),
     rawPayload: record
   };
 }
@@ -144,4 +152,3 @@ export function normalizeRecords(provider: ProviderId, records: unknown[]): Norm
     return normalizeLead(record);
   });
 }
-

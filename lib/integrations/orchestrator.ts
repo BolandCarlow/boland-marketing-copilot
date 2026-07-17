@@ -2,6 +2,7 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { ProviderId } from "@/lib/data-platform/providers";
 import { getIntegrationAdapter, type IntegrationConfiguration } from "./adapter-registry";
+import { syncProviderRecords } from "@/lib/data-platform/sync-service";
 
 type Setting = {
   id: string;
@@ -17,7 +18,8 @@ function configuration(setting: Setting): IntegrationConfiguration {
   return {
     accountIdentifier: setting.account_identifier,
     hasCredentials: Boolean(setting.encrypted_credentials),
-    authenticationType: setting.authentication_type
+    authenticationType: setting.authentication_type,
+    encryptedCredentials: setting.encrypted_credentials
   };
 }
 
@@ -44,15 +46,16 @@ export async function testIntegration(userId: string, provider: ProviderId) {
   const result = await adapter.testConnection(setting ? configuration(setting) : {
     accountIdentifier: null,
     hasCredentials: false,
-    authenticationType: "api_key"
+    authenticationType: "api_key",
+    encryptedCredentials: null
   });
   const now = new Date().toISOString();
 
   if (setting) {
     const { error } = await admin.from("integration_settings").update({
       last_tested_at: now,
-      test_status: result.configurationValid ? "configuration_valid" : "missing_configuration",
-      connection_status: result.configurationValid ? "configured" : "not_connected",
+      test_status: result.ok ? "connected" : result.configurationValid ? "failed" : "missing_configuration",
+      connection_status: result.ok ? "connected" : result.configurationValid ? "error" : "not_connected",
       updated_at: now
     }).eq("id", setting.id);
     if (error) throw error;
@@ -79,11 +82,17 @@ export async function requestManualSync(userId: string, provider: ProviderId) {
   const admin = createAdminClient();
   const setting = await getSetting(userId, provider);
   const adapter = getIntegrationAdapter(provider);
-  const result = await adapter.sync(setting ? configuration(setting) : {
+  let result = await adapter.sync(setting ? configuration(setting) : {
     accountIdentifier: null,
     hasCredentials: false,
-    authenticationType: "api_key"
+    authenticationType: "api_key",
+    encryptedCredentials: null
   });
+  let recordsProcessed = result.recordsProcessed;
+  if (result.status === "success" && result.records?.length) {
+    try { recordsProcessed = await syncProviderRecords(provider, result.records); }
+    catch (error) { result = { ...result, status: "failed", message: error instanceof Error ? error.message : "Integration data could not be stored." }; }
+  }
   const now = new Date().toISOString();
   const { data: history, error } = await admin.from("integration_sync_history").insert({
     user_id: userId,
@@ -92,7 +101,7 @@ export async function requestManualSync(userId: string, provider: ProviderId) {
     trigger_type: "manual",
     status: result.status,
     records_received: result.recordsReceived,
-    records_processed: result.recordsProcessed,
+    records_processed: recordsProcessed,
     completed_at: now,
     error_message: result.status === "failed" ? result.message : null,
     details: { liveConnectionAttempted: result.liveConnectionAttempted, message: result.message }
@@ -138,7 +147,12 @@ export async function runDueScheduledIntegrations(limit = 25) {
   const results = [];
   for (const row of (data ?? []) as Setting[]) {
     const adapter = getIntegrationAdapter(row.provider);
-    const result = await adapter.sync(configuration(row));
+    let result = await adapter.sync(configuration(row));
+    let recordsProcessed = result.recordsProcessed;
+    if (result.status === "success" && result.records?.length) {
+      try { recordsProcessed = await syncProviderRecords(row.provider, result.records); }
+      catch (error) { result = { ...result, status: "failed", message: error instanceof Error ? error.message : "Integration data could not be stored." }; }
+    }
     const completedAt = new Date().toISOString();
     const history = await admin.from("integration_sync_history").insert({
       user_id: row.user_id,
@@ -147,7 +161,7 @@ export async function runDueScheduledIntegrations(limit = 25) {
       trigger_type: "scheduled",
       status: result.status,
       records_received: result.recordsReceived,
-      records_processed: result.recordsProcessed,
+      records_processed: recordsProcessed,
       completed_at: completedAt,
       error_message: result.status === "failed" ? result.message : null,
       details: { liveConnectionAttempted: result.liveConnectionAttempted, message: result.message }
@@ -184,4 +198,3 @@ export async function runDueScheduledIntegrations(limit = 25) {
 export function getNextScheduledRun(frequency: Setting["sync_frequency"]) {
   return nextRun(frequency);
 }
-

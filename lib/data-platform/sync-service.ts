@@ -111,7 +111,11 @@ async function persistAdMetric(provider: ProviderId, record: AdMetric) {
     : await admin.from("meta_ads_metrics").upsert({
         ...shared,
         reach: record.reach ?? 0,
-        leads: record.leads ?? 0
+        leads: record.leads ?? 0,
+        link_clicks: record.linkClicks ?? 0,
+        ctr: record.ctr ?? 0,
+        cpc: record.cpc ?? 0,
+        cpm: record.cpm ?? 0
       }, { onConflict: "source_id,external_campaign_id,metric_date" });
   if (result.error) throw result.error;
 
@@ -165,6 +169,18 @@ async function persistRecord(provider: ProviderId, record: NormalizedRecord) {
   return persistAdMetric(provider, record);
 }
 
+export async function syncProviderRecords(provider: ProviderId, rawRecords: unknown[]) {
+  const records = normalizeRecords(provider, rawRecords);
+  const affectedDates = new Set<string>();
+  for (const record of records) affectedDates.add(await persistRecord(provider, record));
+  const admin = createAdminClient();
+  for (const affectedDate of affectedDates) {
+    const { error } = await admin.rpc("refresh_daily_kpi_summary", { target_date: affectedDate });
+    if (error) throw error;
+  }
+  return records.length;
+}
+
 export async function enqueueSyncJob(provider: ProviderId, records: unknown[]) {
   const admin = createAdminClient();
   const { data, error } = await admin.from("marketing_sync_jobs").insert({
@@ -179,19 +195,14 @@ async function processJob(job: SyncJob) {
   const admin = createAdminClient();
   try {
     const records = normalizeRecords(job.provider, job.payload.records ?? []);
-    const affectedDates = new Set<string>();
-    for (const record of records) affectedDates.add(await persistRecord(job.provider, record));
-    for (const affectedDate of affectedDates) {
-      const { error } = await admin.rpc("refresh_daily_kpi_summary", { target_date: affectedDate });
-      if (error) throw error;
-    }
+    const recordsProcessed = await syncProviderRecords(job.provider, job.payload.records ?? []);
     await admin.from("marketing_sync_jobs").update({
       status: "completed", completed_at: new Date().toISOString(), error_message: null
     }).eq("id", job.id);
     await admin.from("integration_settings").update({
       last_sync_at: new Date().toISOString(), last_sync_status: "success", last_error: null
     }).eq("provider", job.provider);
-    return { id: job.id, status: "completed" as const, records: records.length };
+    return { id: job.id, status: "completed" as const, records: recordsProcessed || records.length };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown sync error";
     await admin.from("marketing_sync_jobs").update({
@@ -213,4 +224,3 @@ export async function processPendingSyncJobs(limit = 10) {
   for (const job of (data ?? []) as SyncJob[]) results.push(await processJob(job));
   return results;
 }
-

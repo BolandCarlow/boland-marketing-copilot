@@ -1,10 +1,12 @@
 import "server-only";
 import type { ProviderId } from "@/lib/data-platform/providers";
+import { metaAdsAdapter } from "./meta-ads";
 
 export type IntegrationConfiguration = {
   accountIdentifier: string | null;
   hasCredentials: boolean;
   authenticationType: string;
+  encryptedCredentials?: string | null;
 };
 
 export type ConnectionTestResult = {
@@ -20,6 +22,7 @@ export type SyncResult = {
   recordsProcessed: number;
   liveConnectionAttempted: boolean;
   message: string;
+  records?: unknown[];
 };
 
 export interface IntegrationAdapter {
@@ -57,7 +60,7 @@ class PlaceholderAdapter implements IntegrationAdapter {
   }
 }
 
-const adapters = new Map<ProviderId, IntegrationAdapter>();
+const adapters = new Map<ProviderId, IntegrationAdapter>([["meta-ads", metaAdsAdapter]]);
 
 export function registerIntegrationAdapter(adapter: IntegrationAdapter) {
   adapters.set(adapter.provider, adapter);
@@ -66,4 +69,3 @@ export function registerIntegrationAdapter(adapter: IntegrationAdapter) {
 export function getIntegrationAdapter(provider: ProviderId) {
   return adapters.get(provider) ?? new PlaceholderAdapter(provider);
 }
-
