@@ -24,7 +24,7 @@ This version is deliberately offline: it stores integration configuration and ac
 1. Copy `.env.example` to `.env.local` and add the Supabase project URL, anon key and service-role key.
 2. Generate the integration encryption key and sync API secret using the commands shown in `.env.example`.
 3. Apply the migrations in `supabase/migrations` in filename order with the Supabase CLI or SQL editor. The second migration adds lead-intelligence spend facts and a month of sample dealership enquiries.
-4. In Supabase Authentication, add `http://localhost:3000/auth/callback` as a redirect URL and enable Email or Google sign-in.
+4. In Supabase Authentication, add `https://boland-marketing-copilot.vercel.app/auth/callback` as a redirect URL and enable Email or Google sign-in. This is the single callback for both Google OAuth and email magic links.
 5. Run `npm install` and `npm run dev`.
 
 Never expose `SUPABASE_SERVICE_ROLE_KEY`, `INTEGRATION_CREDENTIALS_ENCRYPTION_KEY` or `MARKETING_SYNC_API_SECRET` to the browser. Only variables prefixed with `NEXT_PUBLIC_` are browser-safe.
@@ -110,4 +110,3 @@ Lead statuses are `new`, `contacted`, `qualified`, `appointment`, `won` and `los
 ## Enabling live connectors later
 
 Live connector workers can be added without changing the database or dashboard contracts. Implement the `IntegrationAdapter` contract in `lib/integrations/adapter-registry.ts`, register the provider adapter on the server, retrieve and decrypt credentials inside that adapter, translate upstream records into the documented batch format, and enqueue them. Decryption and provider SDK calls must remain in server-only code.
-
