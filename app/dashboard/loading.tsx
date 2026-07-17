@@ -1,0 +1,1 @@
+export default function Loading() { return <><div className="skeleton" style={{ width: 120, height: 14 }}/><div className="skeleton" style={{ width: "48%", height: 42, marginTop: 14 }}/><div className="kpi-grid">{Array.from({ length: 4 }, (_, index) => <div className="skeleton kpi" key={index}/>)}</div><div className="skeleton" style={{ height: 310, marginTop: 18 }}/></>; }

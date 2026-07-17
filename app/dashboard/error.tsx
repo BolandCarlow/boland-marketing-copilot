@@ -1,0 +1,2 @@
+"use client";
+export default function Error({ reset }: { error: Error & { digest?: string }; reset: () => void }) { return <div className="card empty-state"><div><strong>We couldn’t load this view</strong><p>Please try again. If the problem continues, check your data connection or contact the system administrator.</p><button className="button" style={{ marginTop: 18 }} onClick={reset}>Try again</button></div></div>; }
