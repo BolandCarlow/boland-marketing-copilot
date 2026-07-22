@@ -35,11 +35,11 @@ export const providers: ProviderDefinition[] = [
     description: "Website sessions, users, engagement and conversions.",
     accountLabel: "GA4 property ID",
     accountPlaceholder: "123456789",
-    credentialLabel: "Service account or OAuth credentials",
-    credentialPlaceholder: "Paste configuration JSON when the live adapter is enabled.",
+    credentialLabel: "Google OAuth connection",
+    credentialPlaceholder: "Connect Google Analytics from the integrations page.",
     acceptedRecord: "Daily website metrics grouped by source and landing page",
-    authenticationTypes: ["service_account", "oauth"],
-    defaultAuthenticationType: "service_account",
+    authenticationTypes: ["oauth"],
+    defaultAuthenticationType: "oauth",
     capabilities: ["Analytics", "Conversions"]
   },
   {
