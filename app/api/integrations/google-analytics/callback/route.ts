@@ -38,10 +38,13 @@ export async function GET(request: NextRequest) {
     if (!tokenResponse.ok || !token.refresh_token) throw new Error(token.error_description || "Google did not return a refresh token. Please reconnect and grant consent.");
     const { error: saveError } = await createAdminClient().from("ga4_connections").upsert({
       user_id: user.id, property_id: ga4PropertyId(), refresh_token_ciphertext: encryptGa4RefreshToken(token.refresh_token), needs_reauth: false, last_error: null
-    }, { onConflict: "user_id" });
+    }, { onConflict: "user_id,property_id" });
     if (saveError) throw saveError;
     return finish("connected", `Google Analytics is connected to property ${ga4PropertyId()}.`);
   } catch (exception) {
-    return finish("error", exception instanceof Error ? exception.message.slice(0, 300) : "Google Analytics could not be connected.");
+    const message = exception && typeof exception === "object" && "message" in exception && typeof exception.message === "string"
+      ? exception.message
+      : exception instanceof Error ? exception.message : "Google Analytics could not be connected.";
+    return finish("error", message.slice(0, 300));
   }
 }
