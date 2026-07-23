@@ -79,8 +79,108 @@
   line-height: 1.5;
 }
 
+.marketOpp :global(.county-explorer-controls) {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.marketOpp :global(.county-search) {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 7px;
+  min-width: min(100%, 290px);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.marketOpp :global(.county-search span) { grid-column: 2; }
+.marketOpp :global(.county-search svg) { grid-row: 1 / span 2; }
+.marketOpp :global(.county-search input), .marketOpp :global(.compare-toolbar select) {
+  width: 100%;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  padding: 10px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.marketOpp :global(.county-nav), .marketOpp :global(.quick-counties), .marketOpp :global(.compare-toolbar) {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.marketOpp :global(.quick-counties) {
+  margin-top: 12px;
+}
+
+.marketOpp :global(.quick-counties > span) {
+  color: var(--faint);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.marketOpp :global(.active-pill) {
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.marketOpp :global(.compare-toolbar) {
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.marketOpp :global(.compare-toolbar label) {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.marketOpp :global(.county-profile-grid) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.marketOpp :global(.county-profile-grid.compare-mode) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.marketOpp :global(.county-profile) {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+  background: var(--surface-muted);
+}
+
+.marketOpp :global(.county-profile-header), .marketOpp :global(.county-quality) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.marketOpp :global(.county-profile h3) { margin: 4px 0 0; color: var(--text); font-size: 20px; letter-spacing: -.03em; }
+.marketOpp :global(.opportunity-score) { color: var(--accent); font-size: 28px; font-weight: 800; letter-spacing: -.05em; }.marketOpp :global(.opportunity-score small) { color: var(--faint); font-size: 11px; letter-spacing: 0; }
+.marketOpp :global(.county-summary) { margin: 14px 0 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.marketOpp :global(.county-profile-metrics) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; margin-top: 16px; overflow: hidden; border: 1px solid var(--border); border-radius: 11px; background: var(--border); }.marketOpp :global(.county-profile-metrics > div) { display: grid; min-height: 72px; align-content: center; gap: 5px; padding: 10px; background: var(--surface); }.marketOpp :global(.county-profile-metrics span) { color: var(--faint); font-size: 10px; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }.marketOpp :global(.county-profile-metrics strong) { color: var(--text); font-size: 18px; letter-spacing: -.03em; }.marketOpp :global(.county-profile-metrics small) { color: var(--muted); font-size: 11px; line-height: 1.3; }
+.marketOpp :global(.county-quality) { margin-top: 14px; color: var(--muted); font-size: 12px; }.marketOpp :global(.county-pages) { margin-top: 22px; }.marketOpp :global(.county-pages h3) { margin: 0 0 10px; color: var(--text); font-size: 15px; }
+
 @media (max-width: 760px) {
   .marketOpp :global(.opportunity-filters), .marketOpp :global(.opportunity-cards) {
     grid-template-columns: 1fr;
   }
+
+  .marketOpp :global(.county-profile-grid.compare-mode), .marketOpp :global(.county-profile-metrics) { grid-template-columns: 1fr; }
+  .marketOpp :global(.county-explorer-controls) { align-items: stretch; }
 }
