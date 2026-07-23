@@ -4,11 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
-type IconName = "overview" | "leads" | "analytics" | "campaigns" | "reports" | "integrations" | "insights" | "settings" | "sun" | "moon";
+type IconName = "overview" | "market" | "leads" | "analytics" | "campaigns" | "reports" | "integrations" | "insights" | "settings" | "sun" | "moon";
 type NavigationItem = { label: string; href: string; icon: IconName };
 
 const primary: NavigationItem[] = [
   { label: "Overview", href: "/dashboard", icon: "overview" },
+  { label: "Market Intelligence", href: "/dashboard/market-intelligence", icon: "market" },
   { label: "Leads", href: "/dashboard/leads", icon: "leads" },
   { label: "Analytics", href: "/dashboard/analytics", icon: "analytics" },
   { label: "Campaigns", href: "/dashboard/campaigns", icon: "campaigns" },
@@ -23,6 +24,7 @@ const secondary: NavigationItem[] = [
 function Icon({ name }: { name: IconName }) {
   const paths: Record<IconName, ReactNode> = {
     overview: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
+    market: <><path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 15 4-4 3 2 4-6"/><circle cx="7" cy="15" r="1"/><circle cx="11" cy="11" r="1"/><circle cx="14" cy="13" r="1"/><circle cx="18" cy="7" r="1"/></>,
     leads: <><circle cx="12" cy="8" r="3"/><path d="M5 21c.6-4 3-6 7-6s6.4 2 7 6"/></>,
     analytics: <><path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 15 4-4 3 2 4-6"/></>,
     campaigns: <><path d="M4 12h4l9-5v10l-9-5H4z"/><path d="M8 17v3"/><path d="M19 9c1.2 1.7 1.2 4.3 0 6"/></>,
@@ -55,6 +57,6 @@ export function DashboardShell({ children, email, signOut }: { children: ReactNo
   return <div className="app-shell">
     <aside className="sidebar"><Link className="brand" href="/dashboard"><span className="brand-mark">B</span><span className="brand-copy"><strong>Boland</strong><span>Marketing Copilot</span></span></Link><p className="nav-label">Workspace</p><Navigation items={primary}/><p className="nav-label">Management</p><Navigation items={secondary}/><div className="sidebar-footer"><p className="user-email">{email}</p><form action={signOut}><button className="quiet-button">Sign out</button></form></div></aside>
     <div className="main-wrap"><header className="topbar"><span className="topbar-title">Boland Carlow · Marketing management</span><button type="button" className="theme-button" onClick={toggleTheme} aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}><Icon name={dark ? "sun" : "moon"}/></button></header><main className="content">{children}</main></div>
-    <Navigation compact items={[primary[0], primary[1], primary[2], secondary[0]]}/>
+    <Navigation compact items={[primary[0], primary[1], primary[2], primary[3], secondary[0]]}/>
   </div>;
 }

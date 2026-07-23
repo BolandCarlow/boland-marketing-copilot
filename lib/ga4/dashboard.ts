@@ -16,6 +16,8 @@ export type Ga4DashboardData = {
   devices: Ga4Breakdown[];
   landingPages: Ga4LandingPage[];
 };
+export type Ga4GeographicRow = { country: string; label: string; activeUsers: number; sessions: number; engagedSessions: number; newUsers: number; keyEvents: number };
+export type Ga4GeographicData = { generatedAt: string; propertyId: string; countries: Ga4GeographicRow[]; regions: Ga4GeographicRow[]; cities: Ga4GeographicRow[] };
 
 const metricNames: MetricName[] = ["activeUsers", "sessions", "newUsers", "engagedSessions", "keyEvents"];
 const kpiLabels: Record<Ga4Kpi["key"], string> = { activeUsers: "Active users", sessions: "Sessions", newUsers: "New users", engagedSessions: "Engaged sessions", keyEvents: "Key events", engagementRate: "Engagement rate" };
@@ -65,6 +67,11 @@ function trend(report: unknown): Ga4TrendPoint[] {
   return rows.map((row) => ({ date: formattedDate(dimensionValue(row)), sessions: metricValue(row, metricIndex(metricHeaders, "sessions")) })).filter((row) => row.date).sort((a, b) => a.date.localeCompare(b.date));
 }
 
+function geographicRows(report: unknown, labelIndex: number): Ga4GeographicRow[] {
+  const { rows, metricHeaders } = reportRows(report);
+  return rows.map((row) => ({ country: dimensionValue(row, 0), label: dimensionValue(row, labelIndex), activeUsers: metricValue(row, metricIndex(metricHeaders, "activeUsers")), sessions: metricValue(row, metricIndex(metricHeaders, "sessions")), engagedSessions: metricValue(row, metricIndex(metricHeaders, "engagedSessions")), newUsers: metricValue(row, metricIndex(metricHeaders, "newUsers")), keyEvents: metricValue(row, metricIndex(metricHeaders, "keyEvents")) })).filter((row) => row.country && row.label);
+}
+
 export function parseGa4Snapshot(snapshot: Ga4Snapshot | null): Ga4DashboardData | null {
   if (!snapshot || !snapshot.generated_at) return null;
   const reports = array(record(snapshot.payload)?.reports);
@@ -73,4 +80,11 @@ export function parseGa4Snapshot(snapshot: Ga4Snapshot | null): Ga4DashboardData
   const currentRate = engagementRate(current); const lastMonthRate = engagementRate(lastMonth); const previousMonthRate = engagementRate(previousMonth);
   const kpis: Ga4Kpi[] = [...metricNames.map((key) => ({ key, label: kpiLabels[key], value: current[key], change: change(lastMonth[key], previousMonth[key]) })), { key: "engagementRate", label: kpiLabels.engagementRate, value: currentRate, change: change(lastMonthRate, previousMonthRate) }];
   return { generatedAt: snapshot.generated_at, propertyId: snapshot.property_id, kpis, channels: breakdown(reports[1]), devices: breakdown(reports[2]), landingPages: landingPages(reports[3]), trend: trend(reports[4]) };
+}
+
+export function parseGa4GeographicSnapshot(snapshot: Ga4Snapshot | null): Ga4GeographicData | null {
+  if (!snapshot || !snapshot.generated_at) return null;
+  const reports = array(record(snapshot.payload)?.reports);
+  if (reports.length < 10) return null;
+  return { generatedAt: snapshot.generated_at, propertyId: snapshot.property_id, countries: geographicRows(reports[7], 0), regions: geographicRows(reports[8], 1), cities: geographicRows(reports[9], 1) };
 }
