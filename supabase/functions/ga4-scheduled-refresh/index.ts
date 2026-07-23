@@ -47,9 +47,14 @@ Deno.serve(async (request) => {
       }
       const { access_token } = await tokenResponse.json();
       const months = completeMonths();
-      const reportResponse = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${connection.property_id}:batchRunReports`, { method: "POST", headers: { Authorization: `Bearer ${access_token}`, "Content-Type": "application/json" }, body: JSON.stringify({ requests: [report([], propertyMetrics, "30daysAgo", "yesterday", 1), report(["sessionDefaultChannelGroup"], ["sessions", "activeUsers", "keyEvents"], "30daysAgo", "yesterday"), report(["deviceCategory"], ["sessions", "activeUsers", "keyEvents"], "30daysAgo", "yesterday"), report(["landingPagePlusQueryString"], ["sessions", "engagedSessions", "keyEvents"], "30daysAgo", "yesterday", 20), report(["date"], propertyMetrics, "30daysAgo", "yesterday", 31), report([], propertyMetrics, ...months.lastMonth, 1), report([], propertyMetrics, ...months.previousMonth, 1)] }) });
-      if (!reportResponse.ok) throw new Error(`GA4 report failed: ${await reportResponse.text()}`);
-      const { error: snapshotError } = await db.from("ga4_snapshots").insert({ user_id: connection.user_id, connection_id: connection.id, property_id: connection.property_id, payload: { generatedAt: new Date().toISOString(), reports: (await reportResponse.json()).reports } });
+      const requests = [report([], propertyMetrics, "30daysAgo", "yesterday", 1), report(["sessionDefaultChannelGroup"], ["sessions", "activeUsers", "keyEvents"], "30daysAgo", "yesterday"), report(["deviceCategory"], ["sessions", "activeUsers", "keyEvents"], "30daysAgo", "yesterday"), report(["landingPagePlusQueryString"], ["sessions", "engagedSessions", "keyEvents"], "30daysAgo", "yesterday", 20), report(["date"], propertyMetrics, "30daysAgo", "yesterday", 31), report([], propertyMetrics, ...months.lastMonth, 1), report([], propertyMetrics, ...months.previousMonth, 1)];
+      const runBatch = async (batch: typeof requests) => {
+        const reportResponse = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${connection.property_id}:batchRunReports`, { method: "POST", headers: { Authorization: `Bearer ${access_token}`, "Content-Type": "application/json" }, body: JSON.stringify({ requests: batch }) });
+        if (!reportResponse.ok) throw new Error(`GA4 report failed: ${await reportResponse.text()}`);
+        return (await reportResponse.json()).reports ?? [];
+      };
+      const reports = [...await runBatch(requests.slice(0, 5)), ...await runBatch(requests.slice(5))];
+      const { error: snapshotError } = await db.from("ga4_snapshots").insert({ user_id: connection.user_id, connection_id: connection.id, property_id: connection.property_id, payload: { generatedAt: new Date().toISOString(), reports } });
       if (snapshotError) throw snapshotError;
       const { error: connectionError } = await db.from("ga4_connections").update({ last_refreshed_at: new Date().toISOString(), last_error: null }).eq("id", connection.id);
       if (connectionError) throw connectionError;
