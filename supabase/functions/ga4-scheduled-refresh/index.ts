@@ -5,6 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const propertyMetrics = ["activeUsers", "sessions", "newUsers", "engagedSessions", "keyEvents"];
 const bytes = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
 const text = new TextDecoder();
+const errorMessage = (error: unknown) => error instanceof Error ? error.message : String(error);
 
 async function decrypt(envelope: string) {
   const raw = bytes(envelope);
@@ -36,14 +37,29 @@ Deno.serve(async (request) => {
   const { data: connections, error } = await db.from("ga4_connections").select("id,user_id,property_id,refresh_token_ciphertext").eq("needs_reauth", false);
   if (error) return Response.json({ error: error.message }, { status: 500 });
   const results = await Promise.allSettled((connections ?? []).map(async (connection) => {
-    const tokenResponse = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ client_id: Deno.env.get("GOOGLE_OAUTH_CLIENT_ID")!, client_secret: Deno.env.get("GOOGLE_OAUTH_CLIENT_SECRET")!, refresh_token: await decrypt(connection.refresh_token_ciphertext), grant_type: "refresh_token" }) });
-    if (!tokenResponse.ok) { await db.from("ga4_connections").update({ needs_reauth: true, last_error: "Google rejected the refresh token" }).eq("id", connection.id); throw new Error(`Refresh rejected for ${connection.id}`); }
-    const { access_token } = await tokenResponse.json();
-    const months = completeMonths();
-    const reportResponse = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${connection.property_id}:batchRunReports`, { method: "POST", headers: { Authorization: `Bearer ${access_token}`, "Content-Type": "application/json" }, body: JSON.stringify({ requests: [report([], propertyMetrics, "30daysAgo", "yesterday", 1), report(["sessionDefaultChannelGroup"], ["sessions", "activeUsers", "keyEvents"], "30daysAgo", "yesterday"), report(["deviceCategory"], ["sessions", "activeUsers", "keyEvents"], "30daysAgo", "yesterday"), report(["landingPagePlusQueryString"], ["sessions", "engagedSessions", "keyEvents"], "30daysAgo", "yesterday", 20), report(["date"], propertyMetrics, "30daysAgo", "yesterday", 31), report([], propertyMetrics, ...months.lastMonth, 1), report([], propertyMetrics, ...months.previousMonth, 1)] }) });
-    if (!reportResponse.ok) throw new Error(`GA4 report failed: ${await reportResponse.text()}`);
-    await db.from("ga4_snapshots").insert({ user_id: connection.user_id, connection_id: connection.id, property_id: connection.property_id, payload: { generatedAt: new Date().toISOString(), reports: (await reportResponse.json()).reports } });
-    await db.from("ga4_connections").update({ last_refreshed_at: new Date().toISOString(), last_error: null }).eq("id", connection.id);
+    try {
+      const tokenResponse = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ client_id: Deno.env.get("GOOGLE_OAUTH_CLIENT_ID")!, client_secret: Deno.env.get("GOOGLE_OAUTH_CLIENT_SECRET")!, refresh_token: await decrypt(connection.refresh_token_ciphertext), grant_type: "refresh_token" }) });
+      if (!tokenResponse.ok) {
+        const message = `Google token refresh failed: ${await tokenResponse.text() || tokenResponse.statusText}`;
+        const { error: reauthError } = await db.from("ga4_connections").update({ needs_reauth: true }).eq("id", connection.id);
+        if (reauthError) console.error("Could not mark GA4 connection for reauthentication", { connectionId: connection.id, error: reauthError.message });
+        throw new Error(message);
+      }
+      const { access_token } = await tokenResponse.json();
+      const months = completeMonths();
+      const reportResponse = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${connection.property_id}:batchRunReports`, { method: "POST", headers: { Authorization: `Bearer ${access_token}`, "Content-Type": "application/json" }, body: JSON.stringify({ requests: [report([], propertyMetrics, "30daysAgo", "yesterday", 1), report(["sessionDefaultChannelGroup"], ["sessions", "activeUsers", "keyEvents"], "30daysAgo", "yesterday"), report(["deviceCategory"], ["sessions", "activeUsers", "keyEvents"], "30daysAgo", "yesterday"), report(["landingPagePlusQueryString"], ["sessions", "engagedSessions", "keyEvents"], "30daysAgo", "yesterday", 20), report(["date"], propertyMetrics, "30daysAgo", "yesterday", 31), report([], propertyMetrics, ...months.lastMonth, 1), report([], propertyMetrics, ...months.previousMonth, 1)] }) });
+      if (!reportResponse.ok) throw new Error(`GA4 report failed: ${await reportResponse.text()}`);
+      const { error: snapshotError } = await db.from("ga4_snapshots").insert({ user_id: connection.user_id, connection_id: connection.id, property_id: connection.property_id, payload: { generatedAt: new Date().toISOString(), reports: (await reportResponse.json()).reports } });
+      if (snapshotError) throw snapshotError;
+      const { error: connectionError } = await db.from("ga4_connections").update({ last_refreshed_at: new Date().toISOString(), last_error: null }).eq("id", connection.id);
+      if (connectionError) throw connectionError;
+    } catch (error) {
+      const message = errorMessage(error);
+      console.error("GA4 refresh failed", { connectionId: connection.id, error: message });
+      const { error: lastErrorUpdateError } = await db.from("ga4_connections").update({ last_error: message }).eq("id", connection.id);
+      if (lastErrorUpdateError) console.error("Could not save GA4 refresh error", { connectionId: connection.id, error: lastErrorUpdateError.message });
+      throw error;
+    }
   }));
   return Response.json({ refreshed: results.filter((r) => r.status === "fulfilled").length, failed: results.filter((r) => r.status === "rejected").length });
 });
