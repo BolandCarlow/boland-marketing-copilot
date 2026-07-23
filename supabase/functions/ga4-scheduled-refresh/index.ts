@@ -18,8 +18,9 @@ async function decrypt(envelope: string) {
   return text.decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: raw.slice(1, 13), tagLength: 128 }, key, encrypted));
 }
 
-const report = (dimensions: string[], metrics: string[], startDate: string, endDate: string, limit = 10) => ({
+const report = (dimensions: string[], metrics: string[], startDate: string, endDate: string, limit = 10, irelandOnly = false) => ({
   dateRanges: [{ startDate, endDate }], dimensions: dimensions.map((name) => ({ name })), metrics: metrics.map((name) => ({ name })), limit: String(limit),
+  ...(irelandOnly ? { dimensionFilter: { filter: { fieldName: "country", stringFilter: { matchType: "EXACT", value: "Ireland", caseSensitive: false } } } } : {}),
   orderBys: dimensions[0] === "date" ? [{ dimension: { dimensionName: "date" } }] : [{ metric: { metricName: metrics[0] }, desc: true }],
 });
 const isoDate = (date: Date) => date.toISOString().slice(0, 10);
@@ -47,13 +48,15 @@ Deno.serve(async (request) => {
       }
       const { access_token } = await tokenResponse.json();
       const months = completeMonths();
-      const requests = [report([], propertyMetrics, "30daysAgo", "yesterday", 1), report(["sessionDefaultChannelGroup"], ["sessions", "activeUsers", "keyEvents"], "30daysAgo", "yesterday"), report(["deviceCategory"], ["sessions", "activeUsers", "keyEvents"], "30daysAgo", "yesterday"), report(["landingPagePlusQueryString"], ["sessions", "engagedSessions", "keyEvents"], "30daysAgo", "yesterday", 20), report(["date"], propertyMetrics, "30daysAgo", "yesterday", 31), report([], propertyMetrics, ...months.lastMonth, 1), report([], propertyMetrics, ...months.previousMonth, 1), report(["country"], propertyMetrics, "30daysAgo", "yesterday", 250), report(["country", "region"], propertyMetrics, "30daysAgo", "yesterday", 500), report(["country", "city"], propertyMetrics, "30daysAgo", "yesterday", 500)];
+      const pageInterestMetrics = ["screenPageViews", "activeUsers", "sessions", "engagedSessions", "keyEvents"];
+      // Append new reports only: indexes 0-9 are consumed by the existing dashboard.
+      const requests = [report([], propertyMetrics, "30daysAgo", "yesterday", 1), report(["sessionDefaultChannelGroup"], ["sessions", "activeUsers", "keyEvents"], "30daysAgo", "yesterday"), report(["deviceCategory"], ["sessions", "activeUsers", "keyEvents"], "30daysAgo", "yesterday"), report(["landingPagePlusQueryString"], ["sessions", "engagedSessions", "keyEvents"], "30daysAgo", "yesterday", 20), report(["date"], propertyMetrics, "30daysAgo", "yesterday", 31), report([], propertyMetrics, ...months.lastMonth, 1), report([], propertyMetrics, ...months.previousMonth, 1), report(["country"], propertyMetrics, "30daysAgo", "yesterday", 250), report(["country", "region"], propertyMetrics, "30daysAgo", "yesterday", 500), report(["country", "city"], propertyMetrics, "30daysAgo", "yesterday", 500), report(["region", "city", "pagePath", "pageTitle"], pageInterestMetrics, "30daysAgo", "yesterday", 5000, true), report(["region", "city", "pagePath", "pageTitle"], pageInterestMetrics, "60daysAgo", "31daysAgo", 5000, true)];
       const runBatch = async (batch: typeof requests) => {
         const reportResponse = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${connection.property_id}:batchRunReports`, { method: "POST", headers: { Authorization: `Bearer ${access_token}`, "Content-Type": "application/json" }, body: JSON.stringify({ requests: batch }) });
         if (!reportResponse.ok) throw new Error(`GA4 report failed: ${await reportResponse.text()}`);
         return (await reportResponse.json()).reports ?? [];
       };
-      const reports = [...await runBatch(requests.slice(0, 5)), ...await runBatch(requests.slice(5))];
+      const reports = [...await runBatch(requests.slice(0, 5)), ...await runBatch(requests.slice(5, 10)), ...await runBatch(requests.slice(10))];
       const { error: snapshotError } = await db.from("ga4_snapshots").insert({ user_id: connection.user_id, connection_id: connection.id, property_id: connection.property_id, payload: { generatedAt: new Date().toISOString(), reports } });
       if (snapshotError) throw snapshotError;
       const { error: connectionError } = await db.from("ga4_connections").update({ last_refreshed_at: new Date().toISOString(), last_error: null }).eq("id", connection.id);

@@ -1,0 +1,86 @@
+.marketOpp :global(.county-cell) {
+  cursor: pointer;
+  font: inherit;
+}
+
+.marketOpp :global(.county-cell.selected) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.marketOpp :global(.opportunity-filters) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.marketOpp :global(.opportunity-filters label) {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.marketOpp :global(.opportunity-filters select) {
+  width: 100%;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.marketOpp :global(.opportunity-cards) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.marketOpp :global(.opportunity-card) {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  border: 1px solid var(--border);
+  padding: 18px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.marketOpp :global(.opportunity-card:hover) {
+  border-color: var(--accent);
+}
+
+.marketOpp :global(.opportunity-card strong) {
+  font-size: 18px;
+}
+
+.marketOpp :global(.opportunity-card small) {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.marketOpp :global(.county-detail-summary) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px 22px 2px;
+}
+
+.marketOpp :global(.data-privacy-note), .marketOpp :global(.data-threshold-note) {
+  margin: 12px 0 0;
+  color: var(--faint);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
+  .marketOpp :global(.opportunity-filters), .marketOpp :global(.opportunity-cards) {
+    grid-template-columns: 1fr;
+  }
+}

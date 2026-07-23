@@ -1,3 +1,5 @@
+import { classifyPage, type PageCategory } from "./page-classification";
+
 export type Ga4Snapshot = { generated_at: string; property_id: string; payload: unknown };
 
 type RecordValue = Record<string, unknown>;
@@ -18,6 +20,8 @@ export type Ga4DashboardData = {
 };
 export type Ga4GeographicRow = { country: string; label: string; activeUsers: number; sessions: number; engagedSessions: number; newUsers: number; keyEvents: number };
 export type Ga4GeographicData = { generatedAt: string; propertyId: string; countries: Ga4GeographicRow[]; regions: Ga4GeographicRow[]; cities: Ga4GeographicRow[] };
+export type Ga4LocationPageInterest = { region: string; city: string; pagePath: string; pageTitle: string; category: PageCategory; pageViews: number; activeUsers: number; sessions: number; engagedSessions: number; keyEvents: number };
+export type Ga4MarketOpportunitiesData = { generatedAt: string; propertyId: string; current: Ga4LocationPageInterest[]; previous: Ga4LocationPageInterest[] };
 
 const metricNames: MetricName[] = ["activeUsers", "sessions", "newUsers", "engagedSessions", "keyEvents"];
 const kpiLabels: Record<Ga4Kpi["key"], string> = { activeUsers: "Active users", sessions: "Sessions", newUsers: "New users", engagedSessions: "Engaged sessions", keyEvents: "Key events", engagementRate: "Engagement rate" };
@@ -72,6 +76,14 @@ function geographicRows(report: unknown, labelIndex: number): Ga4GeographicRow[]
   return rows.map((row) => ({ country: dimensionValue(row, 0), label: dimensionValue(row, labelIndex), activeUsers: metricValue(row, metricIndex(metricHeaders, "activeUsers")), sessions: metricValue(row, metricIndex(metricHeaders, "sessions")), engagedSessions: metricValue(row, metricIndex(metricHeaders, "engagedSessions")), newUsers: metricValue(row, metricIndex(metricHeaders, "newUsers")), keyEvents: metricValue(row, metricIndex(metricHeaders, "keyEvents")) })).filter((row) => row.country && row.label);
 }
 
+function locationPageInterest(report: unknown): Ga4LocationPageInterest[] {
+  const { rows, metricHeaders } = reportRows(report);
+  return rows.map((row) => {
+    const pagePath = dimensionValue(row, 2); const pageTitle = dimensionValue(row, 3);
+    return { region: dimensionValue(row) || "Unknown location", city: dimensionValue(row, 1) || "Unknown city", pagePath, pageTitle: pageTitle || "Untitled page", category: classifyPage(pagePath, pageTitle), pageViews: metricValue(row, metricIndex(metricHeaders, "screenPageViews")), activeUsers: metricValue(row, metricIndex(metricHeaders, "activeUsers")), sessions: metricValue(row, metricIndex(metricHeaders, "sessions")), engagedSessions: metricValue(row, metricIndex(metricHeaders, "engagedSessions")), keyEvents: metricValue(row, metricIndex(metricHeaders, "keyEvents")) };
+  }).filter((row) => Boolean(row.pagePath || row.pageTitle !== "Untitled page"));
+}
+
 export function parseGa4Snapshot(snapshot: Ga4Snapshot | null): Ga4DashboardData | null {
   if (!snapshot || !snapshot.generated_at) return null;
   const reports = array(record(snapshot.payload)?.reports);
@@ -87,4 +99,11 @@ export function parseGa4GeographicSnapshot(snapshot: Ga4Snapshot | null): Ga4Geo
   const reports = array(record(snapshot.payload)?.reports);
   if (reports.length < 10) return null;
   return { generatedAt: snapshot.generated_at, propertyId: snapshot.property_id, countries: geographicRows(reports[7], 0), regions: geographicRows(reports[8], 1), cities: geographicRows(reports[9], 1) };
+}
+
+export function parseGa4MarketOpportunitiesSnapshot(snapshot: Ga4Snapshot | null): Ga4MarketOpportunitiesData | null {
+  if (!snapshot || !snapshot.generated_at) return null;
+  const reports = array(record(snapshot.payload)?.reports);
+  if (reports.length < 12) return null;
+  return { generatedAt: snapshot.generated_at, propertyId: snapshot.property_id, current: locationPageInterest(reports[10]), previous: locationPageInterest(reports[11]) };
 }
