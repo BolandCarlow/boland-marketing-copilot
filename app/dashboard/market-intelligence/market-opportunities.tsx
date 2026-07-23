@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, GitCompareArrows, MapPinned, Search, Sparkle
 import styles from "./market-opportunities.module.css";
 import { BrandBadge, EmptyState, IconTile, StatusBadge, TrendBadge } from "../dashboard-ui";
 import type { Ga4MarketOpportunitiesData } from "@/lib/ga4/dashboard";
+import { ga4DisplayText } from "@/lib/ga4/display";
 import { MIN_CATEGORY_PAGE_VIEWS, MIN_COMPARISON_PAGE_VIEWS, MIN_GROWTH, MIN_KEY_EVENTS, MIN_SHARE_DIFFERENCE, buildOpportunities, marketCategories, type CountyInterest, type InterestMetric, type InterestMetrics } from "@/lib/ga4/market-opportunities";
 import type { PageCategory } from "@/lib/ga4/page-classification";
 
@@ -14,7 +15,7 @@ const metricOptions: { key: InterestMetric; label: string }[] = [{ key: "pageVie
 const safeNumber = (value: number | null | undefined) => Number.isFinite(value) ? Number(value) : 0;
 const number = (value: number | null | undefined) => safeNumber(value).toLocaleString("en-IE");
 const percent = (value: number | null | undefined) => value === null || value === undefined || !Number.isFinite(value) ? "No previous period available" : `${(value * 100).toFixed(1)}%`;
-const label = (value: string | null | undefined, fallback: string) => typeof value === "string" && value.trim() ? value.trim() : fallback;
+const label = (value: unknown, fallback: string) => ga4DisplayText(value, fallback);
 const rate = (numerator: number, denominator: number) => denominator > 0 && Number.isFinite(numerator) ? numerator / denominator : null;
 const countyKey = (value: string) => value.toLowerCase().replace(/^county\s+/, "").replace(/\s+county$/, "").trim();
 const categoryMetric = (county: CountyInterest, category: PageCategory, metric: InterestMetric) => safeNumber(county.categories.find((item) => item.category === category)?.[metric]);

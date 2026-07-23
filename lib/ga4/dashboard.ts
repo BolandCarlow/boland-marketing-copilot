@@ -1,4 +1,5 @@
 import { classifyPage, type PageCategory } from "./page-classification";
+import { ga4DisplayText } from "./display";
 
 export type Ga4Snapshot = { generated_at: string; property_id: string; payload: unknown };
 
@@ -79,9 +80,9 @@ function geographicRows(report: unknown, labelIndex: number): Ga4GeographicRow[]
 function locationPageInterest(report: unknown): Ga4LocationPageInterest[] {
   const { rows, metricHeaders } = reportRows(report);
   return rows.map((row) => {
-    const pagePath = dimensionValue(row, 2); const pageTitle = dimensionValue(row, 3);
-    return { region: dimensionValue(row) || "Unknown location", city: dimensionValue(row, 1) || "Unknown city", pagePath, pageTitle: pageTitle || "Untitled page", category: classifyPage(pagePath, pageTitle), pageViews: metricValue(row, metricIndex(metricHeaders, "screenPageViews")), activeUsers: metricValue(row, metricIndex(metricHeaders, "activeUsers")), sessions: metricValue(row, metricIndex(metricHeaders, "sessions")), engagedSessions: metricValue(row, metricIndex(metricHeaders, "engagedSessions")), keyEvents: metricValue(row, metricIndex(metricHeaders, "keyEvents")) };
-  }).filter((row) => Boolean(row.pagePath || row.pageTitle !== "Untitled page"));
+    const pagePath = ga4DisplayText(dimensionValue(row, 2), ""); const pageTitle = ga4DisplayText(dimensionValue(row, 3), "");
+    return { region: ga4DisplayText(dimensionValue(row), "Unknown location"), city: ga4DisplayText(dimensionValue(row, 1), "Unknown city"), pagePath, pageTitle: ga4DisplayText(pageTitle, "Unknown"), category: classifyPage(pagePath, pageTitle), pageViews: metricValue(row, metricIndex(metricHeaders, "screenPageViews")), activeUsers: metricValue(row, metricIndex(metricHeaders, "activeUsers")), sessions: metricValue(row, metricIndex(metricHeaders, "sessions")), engagedSessions: metricValue(row, metricIndex(metricHeaders, "engagedSessions")), keyEvents: metricValue(row, metricIndex(metricHeaders, "keyEvents")) };
+  }).filter((row) => Boolean(row.pagePath || row.pageTitle !== "Unknown"));
 }
 
 export function parseGa4Snapshot(snapshot: Ga4Snapshot | null): Ga4DashboardData | null {
