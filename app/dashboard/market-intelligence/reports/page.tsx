@@ -1,3 +1,13 @@
+import { BarChart3, FileDown, FileText, Globe2, MapPinned } from "lucide-react";
+import { ReportCard, SectionHeader, StatusBadge } from "../../dashboard-ui";
+
+const reports = [
+  { title: "Monthly Marketing Report", description: "A consolidated view of website, leads and marketing investment.", icon: FileText },
+  { title: "Executive Summary", description: "A concise management view of headline performance and actions.", icon: BarChart3 },
+  { title: "Website Performance Report", description: "GA4 traffic, engagement, acquisition and landing-page reporting.", icon: Globe2 },
+  { title: "Geographic Opportunity Report", description: "Ireland website-interest and county opportunity reporting.", icon: MapPinned },
+];
+
 export default function ReportsPage() {
-  return <section className="section card section-card"><div className="section-heading"><div><p className="eyebrow">Reports</p><h2 className="section-title">Monthly Report Generator</h2><p className="section-description">Prepare a structured management report once supporting sources are connected.</p></div><span className="pill">Coming soon</span></div><form className="report-generator"><label>Select Month<select defaultValue=""><option value="" disabled>Select a month</option><option value="current">Current month</option><option value="previous">Previous complete month</option></select></label><label>Compare Month<select defaultValue=""><option value="" disabled>Select comparison month</option><option value="previous">Previous complete month</option><option value="none">No comparison</option></select></label><div className="report-actions"><button type="button" className="button primary">Generate Report</button><button type="button" className="button" disabled>Export PDF</button></div></form></section>;
+  return <section className="section"><SectionHeader eyebrow="Reports" title="Management reporting" description="Report templates are prepared for connected data. Export remains unavailable until report generation is implemented." action={<StatusBadge status="comingSoon">Export unavailable</StatusBadge>}/><div className="placeholder-grid">{reports.map((report) => <ReportCard key={report.title} {...report} action={<button type="button" className="button" disabled><FileDown aria-hidden="true" size={15}/>Export PDF</button>}/>)}</div></section>;
 }
