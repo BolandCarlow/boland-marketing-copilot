@@ -33,7 +33,10 @@ export function parseUsedVehicle(titleValue: unknown, pathValue: unknown) {
   const used = /\bused\b|\bpre owned\b|\bsecond hand\b|\/vehicle\b|\/used\b|\/search\b/.test(source);
   if (!used) return null;
   const year = source.match(/\b(?:19|20)\d{2}\b/)?.[0] ?? null;
-  const matchedMake = makes.find(([key]) => new RegExp(`\\b${normalise(key).replace(/ /g, "\\s+")}\\b`).test(source));
+  const matchedMakes = makes.filter(([key]) => new RegExp(`\\b${normalise(key).replace(/ /g, "\\s+")}\\b`).test(source));
+  // Dealer, brand and offer pages often contain several makes. They are not listings.
+  if (matchedMakes.length !== 1) return null;
+  const matchedMake = matchedMakes[0];
   if (!matchedMake) return { key: `unclassified|${normalise(cleanPath || cleanTitle)}`, name: "Unclassified Used Vehicle", condition: "used" as const, year, make: null, model: null, unclassified: true };
   const [makeKey, make] = matchedMake;
   const makePosition = source.search(new RegExp(`\\b${normalise(makeKey).replace(/ /g, "\\s+")}\\b`));

@@ -10,7 +10,7 @@ type SortKey = VehicleMetric | "engagementRate" | "listings" | "name";
 const options: { key: VehicleMetric; label: string }[] = [{ key: "pageViews", label: "Page views" }, { key: "activeUsers", label: "Users" }, { key: "sessions", label: "Sessions" }, { key: "keyEvents", label: "Key events" }];
 const number = (value: unknown) => Number.isFinite(value) ? Number(value).toLocaleString("en-IE") : "—";
 const percent = (value: number | null) => value === null || !Number.isFinite(value) ? "—" : `${(value * 100).toFixed(1)}%`;
-function VehicleName({ group }: { group: VehicleGroup }) { return <div><strong className="vehicle-name">{group.name}</strong><span className="small">{group.year ?? "Year Unknown"} · {group.listings} listing{group.listings === 1 ? "" : "s"}</span></div>; }
+function VehicleName({ group }: { group: VehicleGroup }) { return <div><strong className="vehicle-name">{group.name}</strong><BrandBadge brand={group.make ?? "Other"}/><span className="small">{group.year ?? "Year Unknown"} · {group.listings} listing{group.listings === 1 ? "" : "s"}</span></div>; }
 function Details({ group }: { group: VehicleGroup }) { return <details className="vehicle-details"><summary>View listing pages</summary><div className="table-scroll"><table className="data-table"><thead><tr><th>Listing page</th><th>Views</th><th>Users</th><th>Key events</th></tr></thead><tbody>{group.listingPages.map((item) => <tr key={`${item.path}-${item.title}`}><td>{item.title}<span className="small">{item.path}</span></td><td>{number(item.pageViews)}</td><td>{number(item.activeUsers)}</td><td>{number(item.keyEvents)}</td></tr>)}</tbody></table></div></details>; }
 
 export function VehiclePerformance({ data }: { data: VehiclePerformanceData | null }) {
