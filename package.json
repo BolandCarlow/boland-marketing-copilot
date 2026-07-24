@@ -8,7 +8,7 @@
     "typecheck": "tsc --noEmit",
     "start": "next start",
     "lint": "eslint .",
-    "test:ga4-classification": "node --experimental-strip-types --test lib/ga4/page-classification.test.ts lib/ga4/display.test.ts"
+    "test:ga4-classification": "node --experimental-strip-types --test lib/ga4/page-classification.test.ts lib/ga4/display.test.ts lib/ga4/location.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.2",
