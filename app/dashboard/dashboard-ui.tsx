@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Minus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import styles from "./dashboard-ui.module.css";
-import { categoryLabel } from "@/lib/ga4/page-classification";
+import { categoryBadgeToken, categoryLabel } from "@/lib/ga4/page-classification";
 
 type TrendValue = number | null;
 
@@ -55,7 +55,7 @@ export function EmptyState({ icon: Icon, title, description, action }: { icon: L
 
 export function BrandBadge({ brand }: { brand: "Volvo" | "Skoda" | "Peugeot" | "Mazda" | "Used Cars" | "Aftersales" | string }) {
   const display = categoryLabel(brand);
-  const token = display.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  const token = categoryBadgeToken(brand);
   return <span className={`${styles.brandBadge} ${styles[token] ?? ""}`}>{display}</span>;
 }
 

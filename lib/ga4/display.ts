@@ -1,10 +1,11 @@
 const invalidFragment = /(?:undefined|null|nan)/gi;
+const unavailableValue = /^(?:\(\s*not\s+(?:set|provided)\s*\)|not\s+(?:set|provided))$/i;
 
 /** Converts incomplete GA4 dimension values into safe, human-readable display text. */
 export function ga4DisplayText(value: unknown, fallback = "—") {
   if (typeof value !== "string") return fallback;
   const cleaned = value.replace(invalidFragment, "").replace(/\s{2,}/g, " ").trim();
-  if (!cleaned) return fallback;
+  if (!cleaned || unavailableValue.test(cleaned)) return fallback;
 
   // GA4 occasionally repeats a title fragment (for example, "Model | Model").
   const fragments = cleaned.split(/\s*(?:\||·|—)\s*/).map((fragment) => fragment.trim()).filter(Boolean);

@@ -21,10 +21,14 @@ const rules: Rule[] = [
 ];
 
 const labels: Record<PageCategory, string> = { "Volvo": "Volvo", "Skoda": "Škoda", "Peugeot": "Peugeot", "Mazda": "Mazda", "Used Cars / Skoda": "Used Cars / Škoda", "Used Cars / Volvo": "Used Cars / Volvo", "Used Cars / Peugeot": "Used Cars / Peugeot", "Used Cars / Mazda": "Used Cars / Mazda", "Used Cars / Non-Franchised": "Used Cars / Non-Franchised", "Aftersales": "Aftersales", "Other": "Other" };
+const badgeTokens: Record<PageCategory, string> = { "Volvo": "volvo", "Skoda": "skoda", "Peugeot": "peugeot", "Mazda": "mazda", "Used Cars / Skoda": "usedcarsskoda", "Used Cars / Volvo": "usedcarsvolvo", "Used Cars / Peugeot": "usedcarspeugeot", "Used Cars / Mazda": "usedcarsmazda", "Used Cars / Non-Franchised": "usedcarsnonfranchised", "Aftersales": "aftersales", "Other": "other" };
 
 function normalise(value: string) { return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); }
 
 export function categoryLabel(category: PageCategory | string) { return labels[category as PageCategory] ?? category; }
+
+/** Stable CSS token for category badges; never derives text from optional page data. */
+export function categoryBadgeToken(category: PageCategory | string) { return badgeTokens[category as PageCategory] ?? "other"; }
 
 export function classifyPage(path: string, title: string): PageCategory {
   const source = `${normalise(path)} ${normalise(title)}`;
