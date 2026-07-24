@@ -7,8 +7,15 @@ import { visibleTableRows } from "./table-display.ts";
 test("cleans invalid fragments and repeated page titles", () => {
   assert.equal(ga4DisplayText("Used Carsundefined"), "Used Cars");
   assert.equal(ga4DisplayText("/searchundefined"), "/search");
+  assert.equal(ga4DisplayText("Used Cars Carlowundefinedundefined"), "Used Cars Carlow");
+  assert.equal(ga4DisplayText("NaN"), "—");
   assert.equal(ga4DisplayText("Kodiaq | Kodiaq"), "Kodiaq");
   assert.equal(ga4DisplayText("(not set)", "Unknown"), "Unknown");
+});
+
+test("uses fixed used-car display labels for corrupted category values", () => {
+  assert.equal(categoryLabel("Used Cars / Skodaundefined"), "Used Cars / Škoda");
+  assert.equal(categoryLabel("Used Cars / Non-Franchisedundefinedundefined"), "Used Cars / Non-Franchised");
 });
 
 test("uses the exact used vehicle category labels", () => {

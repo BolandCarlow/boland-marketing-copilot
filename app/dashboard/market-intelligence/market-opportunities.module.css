@@ -190,11 +190,13 @@
   font-size: 12px;
 }
 
-.marketOpp :global(.page-interest-table) { min-width: 900px; }
-.marketOpp :global(.page-interest-table th:first-child), .marketOpp :global(.page-interest-table td:first-child) { width: 42%; min-width: 300px; white-space: normal; }
-.marketOpp :global(.page-interest-table td:nth-child(2)) { min-width: 175px; }
-.marketOpp :global(.page-title) { display: block; overflow-wrap: anywhere; color: var(--text); font-weight: 650; line-height: 1.45; }
-.marketOpp :global(.page-interest-table .small) { display: block; margin-top: 4px; overflow-wrap: anywhere; }
+.marketOpp :global(.page-interest-table) { width: 100%; min-width: 960px; table-layout: fixed; }
+.marketOpp :global(.page-interest-table th:first-child), .marketOpp :global(.page-interest-table td:first-child) { width: 42%; min-width: 360px; white-space: normal; }
+.marketOpp :global(.page-interest-table th:nth-child(2)), .marketOpp :global(.page-interest-table td:nth-child(2)) { width: 185px; min-width: 185px; }
+.marketOpp :global(.page-interest-table th:nth-child(n + 3)), .marketOpp :global(.page-interest-table td:nth-child(n + 3)) { width: 88px; min-width: 88px; white-space: nowrap; }
+.marketOpp :global(.page-interest-table .page-title) { display: -webkit-box; overflow: hidden; margin: 0; color: var(--text); font-size: 15px; font-weight: 600; line-height: 1.4; letter-spacing: normal; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.marketOpp :global(.page-interest-table .small) { display: -webkit-box; margin-top: 4px; overflow: hidden; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 1; }
+.marketOpp :global(.page-interest-table .brandBadge) { max-width: 100%; white-space: normal; }
 
 @media (max-width: 760px) {
   .marketOpp :global(.opportunity-filters), .marketOpp :global(.opportunity-cards) {
@@ -206,4 +208,7 @@
   .marketOpp :global(.table-list-footer) { align-items: stretch; flex-direction: column; }
   .marketOpp :global(.table-list-footer .button) { width: 100%; justify-content: center; }
   .marketOpp :global(.opportunity-filters label .brandBadge) { margin: 0; }
+  .marketOpp :global(.page-interest-table) { min-width: 900px; }
+  .marketOpp :global(.page-interest-table th:first-child), .marketOpp :global(.page-interest-table td:first-child) { width: 350px; min-width: 350px; }
+  .marketOpp :global(.page-interest-table .page-title) { font-size: 14px; }
 }
