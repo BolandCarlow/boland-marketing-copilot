@@ -13,7 +13,7 @@ export function metaOAuthConfiguration() {
     appSecret: required("META_APP_SECRET"),
     redirectUri: required("META_OAUTH_REDIRECT_URI"),
     graphVersion: process.env.META_GRAPH_API_VERSION?.trim() || "v23.0",
-    scopes: process.env.META_OAUTH_SCOPES?.trim() || "ads_read,read_insights"
+    scopes: process.env.META_OAUTH_SCOPES?.trim() || "ads_read,read_insights,business_management"
   };
 }
 

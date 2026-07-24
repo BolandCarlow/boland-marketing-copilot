@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const authorization = metaAuthorizationUrl();
     authorization.searchParams.set("state", state);
     const response = NextResponse.redirect(authorization);
-    response.cookies.set("meta_oauth_state", state, { httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 600 });
+    response.cookies.set("meta_oauth_state", state, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 600 });
     return response;
   } catch (error) {
     return NextResponse.redirect(new URL(`/dashboard/settings/integrations/meta-ads?status=error&message=${encodeURIComponent(error instanceof Error ? error.message : "Meta OAuth could not start.")}`, request.url));
