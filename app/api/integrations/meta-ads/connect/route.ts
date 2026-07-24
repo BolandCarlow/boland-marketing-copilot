@@ -3,11 +3,10 @@ import { createMetaOAuthState, hashMetaOAuthState, metaAuthorizationUrl } from "
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.redirect(new URL("/login", request.url));
-
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.redirect(new URL("/login", request.url));
     const state = createMetaOAuthState();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     const { error } = await supabase.from("meta_connections").upsert({
@@ -26,6 +25,7 @@ export async function GET(request: NextRequest) {
     response.cookies.set("meta_oauth_state", state, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 600 });
     return response;
   } catch (error) {
-    return NextResponse.redirect(new URL(`/dashboard/settings/integrations/meta-ads?status=error&message=${encodeURIComponent(error instanceof Error ? error.message : "Meta OAuth could not start.")}`, request.url));
+    const message = error instanceof Error ? error.message : "Meta OAuth could not start.";
+    return NextResponse.redirect(new URL(`/dashboard/settings/integrations/meta-ads?status=error&message=${encodeURIComponent(message)}`, request.url));
   }
 }

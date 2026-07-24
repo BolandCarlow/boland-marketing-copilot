@@ -19,7 +19,13 @@ export async function GET(request: NextRequest) {
   const state = request.nextUrl.searchParams.get("state"); const code = request.nextUrl.searchParams.get("code");
   if (!state || !code || !equal(request.cookies.get("meta_oauth_state")?.value, state)) return redirect("error", "The Meta OAuth callback could not be verified.");
 
-  const supabase = await createClient(); const { data: { user } } = await supabase.auth.getUser();
+  let supabase: Awaited<ReturnType<typeof createClient>>; let user: { id: string } | null;
+  try {
+    supabase = await createClient();
+    ({ data: { user } } = await supabase.auth.getUser());
+  } catch {
+    return redirect("error", "Meta OAuth is unavailable because server authentication is not configured.");
+  }
   if (!user) return redirect("error", "Your session expired before the Meta callback completed.");
   const { data: connection, error: readError } = await supabase.from("meta_connections").select("id,oauth_state_hash,oauth_state_expires_at").eq("user_id", user.id).maybeSingle();
   if (readError || !connection || connection.oauth_state_expires_at === null || new Date(connection.oauth_state_expires_at).getTime() < Date.now() || !equal(connection.oauth_state_hash ?? undefined, hashMetaOAuthState(state))) {
