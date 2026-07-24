@@ -1,25 +1,31 @@
-import { randomBytes } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { createMetaOAuthState, hashMetaOAuthState, metaAuthorizationUrl } from "@/lib/meta/oauth";
 import { createClient } from "@/lib/supabase/server";
-
-const appId = () => process.env.META_APP_ID || "1807324450433396";
-const redirectUri = () => process.env.META_ADS_REDIRECT_URI || "https://boland-marketing-copilot.vercel.app/api/integrations/meta-ads/callback";
-const graphVersion = () => process.env.META_GRAPH_API_VERSION || "v23.0";
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.redirect(new URL("/login", request.url));
 
-  const state = randomBytes(32).toString("base64url");
-  const authorization = new URL(`https://www.facebook.com/${graphVersion()}/dialog/oauth`);
-  authorization.searchParams.set("client_id", appId());
-  authorization.searchParams.set("redirect_uri", redirectUri());
-  authorization.searchParams.set("state", state);
-  authorization.searchParams.set("response_type", "code");
-  authorization.searchParams.set("scope", "ads_read,read_insights");
+  try {
+    const state = createMetaOAuthState();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    const { error } = await supabase.from("meta_connections").upsert({
+      user_id: user.id,
+      connection_status: "authorization_pending",
+      oauth_state_hash: hashMetaOAuthState(state),
+      oauth_state_expires_at: expiresAt,
+      encrypted_authorization_code: null,
+      last_refresh_error: null
+    }, { onConflict: "user_id" });
+    if (error) throw new Error(error.code === "42P01" ? "Apply the Meta OAuth migration before connecting." : error.message);
 
-  const response = NextResponse.redirect(authorization);
-  response.cookies.set("meta_oauth_state", state, { httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 600 });
-  return response;
+    const authorization = metaAuthorizationUrl();
+    authorization.searchParams.set("state", state);
+    const response = NextResponse.redirect(authorization);
+    response.cookies.set("meta_oauth_state", state, { httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 600 });
+    return response;
+  } catch (error) {
+    return NextResponse.redirect(new URL(`/dashboard/settings/integrations/meta-ads?status=error&message=${encodeURIComponent(error instanceof Error ? error.message : "Meta OAuth could not start.")}`, request.url));
+  }
 }
